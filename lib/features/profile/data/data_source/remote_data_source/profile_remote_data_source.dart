@@ -14,49 +14,56 @@ class ProfileRemoteDataSource {
 
   Future<ProfileApiModel> getUserProfile() async {
     try {
-      final tokenResult = await _tokenSharedPrefs.getToken();
-      final token = tokenResult.getOrElse(() => '');
-
+      final token = (await _tokenSharedPrefs.getToken()).getOrElse(() => '');
       final response = await _apiService.dio.get(
-        "${ApiEndpoints.baseUrl}auth/me", // Endpoint to get current user
+        "${ApiEndpoints.baseUrl}auth/me",
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-
-      if (response.statusCode == 200) {
-        return ProfileApiModel.fromJson(response.data['user']);
-      } else {
-        throw Exception(response.statusMessage);
-      }
+      return ProfileApiModel.fromJson(response.data);
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? e.message);
     }
   }
 
-  Future<ProfileApiModel> updateUserProfile(ProfileEntity profile, File? image) async {
-    try {
-      final tokenResult = await _tokenSharedPrefs.getToken();
-      final token = tokenResult.getOrElse(() => '');
 
-      FormData formData = FormData.fromMap({
-        "fullName": profile.fullName,
-        "phone": profile.phone,
-        if (image != null)
-          "profilePic": await MultipartFile.fromFile(image.path, filename: image.path.split('/').last),
-      });
+Future<ProfileApiModel> updateFullProfile(
+    ProfileEntity profile, {
+    File? profilePic, File? licenseImg, File? selfieImg,
+    File? bikeImg, File? bb2, File? bb3,
+  }) async {
+    final token = (await _tokenSharedPrefs.getToken()).getOrElse(() => '');
+    
+    Map<String, dynamic> data = {
+      "fullName": profile.fullName,
+      "phone": profile.phone,
+      "gender": profile.gender,
+      "dob": profile.dob,
+      "licenseNumber": profile.kycDetails?['licenseNumber'],
+      "licenseExpiryDate": profile.kycDetails?['licenseExpiryDate'],
+      "licenseIssueDate": profile.kycDetails?['licenseIssueDate'],
+      "vehicleModel": profile.kycDetails?['vehicleModel'],
+      "vehicleProductionYear": profile.kycDetails?['vehicleProductionYear'],
+      "vehiclePlateNumber": profile.kycDetails?['vehiclePlateNumber'],
+    };
 
-      final response = await _apiService.dio.put(
-        "${ApiEndpoints.baseUrl}auth/update", // Endpoint to update
-        data: formData,
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-
-      if (response.statusCode == 200) {
-        return ProfileApiModel.fromJson(response.data['user']);
-      } else {
-        throw Exception(response.statusMessage);
+    FormData formData = FormData.fromMap(data);
+    
+    Future<void> attach(String key, File? f) async {
+      if (f != null && f.path.isNotEmpty && await f.exists()) {
+        formData.files.add(MapEntry(key, await MultipartFile.fromFile(f.path)));
       }
-    } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? e.message);
     }
+
+    await attach("profilePic", profilePic);
+    await attach("licenseImage", licenseImg);
+    await attach("selfieWithLicense", selfieImg);
+    await attach("vehiclePhoto", bikeImg);
+    await attach("billbookPage2", bb2);
+    await attach("billbookPage3", bb3);
+
+    final res = await _apiService.dio.put("${ApiEndpoints.baseUrl}auth/update",
+        data: formData, options: Options(headers: {'Authorization': 'Bearer $token'}));
+    
+    return ProfileApiModel.fromJson(res.data);
   }
 }

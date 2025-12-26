@@ -21,9 +21,25 @@ class ProfileRepositoryImpl implements IProfileRepository {
   }
 
   @override
-  Future<Either<Failure, ProfileEntity>> updateUserProfile(ProfileEntity profile, File? image) async {
+  Future<Either<Failure, ProfileEntity>> updateFullProfile(
+    ProfileEntity profile, {
+    File? profilePic,
+    File? licenseImg,
+    File? selfieImg,
+    File? bikeImg,
+    File? bb2,
+    File? bb3,
+  }) async {
     try {
-      final model = await remoteDataSource.updateUserProfile(profile, image);
+      final model = await remoteDataSource.updateFullProfile(
+        profile,
+        profilePic: profilePic,
+        licenseImg: licenseImg,
+        selfieImg: selfieImg,
+        bikeImg: bikeImg,
+        bb2: bb2,
+        bb3: bb3,
+      );
       return Right(model.toEntity());
     } catch (e) {
       return Left(ApiFailure(message: e.toString()));
