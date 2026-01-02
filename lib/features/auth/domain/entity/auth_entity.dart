@@ -8,7 +8,7 @@ class AuthEntity extends Equatable {
   final String password;
   final String gender;
   final String dob;
-  final String? image; // Path to the image file
+  final String? image; 
 
   const AuthEntity({
     this.id,

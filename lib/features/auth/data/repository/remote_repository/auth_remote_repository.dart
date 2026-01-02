@@ -29,4 +29,14 @@ class AuthRemoteRepository implements IAuthRepository {
       return Left(ApiFailure(message: e.toString()));
     }
   }
+  
+  @override
+  Future<Either<Failure, void>> updateFcmToken(String token) async{
+    try{
+        await _dataSource.updateFcmToken(token);
+        return const Right(null);
+    }catch (e) {
+    return Left(ApiFailure(message: e.toString()));
+  }
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tripmate/features/auth/domain/use_case/register_use_case.dart';
+import 'package:tripmate/core/common/snackbar/my_snack_bar.dart'; // ✅ Add this import
 import 'register_event.dart';
 import 'register_state.dart';
 
@@ -26,12 +27,21 @@ class RegisterViewModel extends Bloc<RegisterEvent, RegisterState> {
     result.fold(
       (failure) {
         emit(state.copyWith(isLoading: false, errorMessage: failure.message));
-        ScaffoldMessenger.of(event.context).showSnackBar(SnackBar(content: Text(failure.message), backgroundColor: Colors.red));
+        // ✅ Use your custom snackbar for error
+        showMySnackBar(
+          context: event.context, 
+          message: failure.message, 
+          isError: true
+        );
       },
       (success) {
         emit(state.copyWith(isLoading: false, isSuccess: true));
-        ScaffoldMessenger.of(event.context).showSnackBar(const SnackBar(content: Text("Registration Successful"), backgroundColor: Colors.green));
-        Navigator.pop(event.context); // Navigate back to Login
+        // ✅ Use your custom snackbar for success
+        showMySnackBar(
+          context: event.context, 
+          message: "Registration Successful"
+        );
+        Navigator.pop(event.context); 
       },
     );
   }
